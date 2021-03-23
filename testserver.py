@@ -1,6 +1,9 @@
-from flask import Flask
+from flask import Flask, request, make_response, jsonify, send_file
 from flask_socketio import SocketIO, disconnect, emit, send, join_room, leave_room
 from flask_cors import CORS
+from pdflatex import PDFLaTeX
+import base64
+import io
 
 app = Flask(__name__)
 sio = SocketIO(app, cors_allowed_origins="*")
@@ -65,6 +68,30 @@ def get_project_data(pid):
             "value": {"main":{"_id":"6055c6a0b58a129e10222bf7","name":"main","dids":["6055c6a0b58a129e10222bf8"],"folders":[],"images":[]}}
     }
     emit('get_project_response', projektTest)
+
+
+@app.route('/requests/create_pdf', methods=["POST"])
+def create_pdf():
+    text = request.get_json(force=True).get("text")
+    print(text)
+    print("_-----------------------_")
+    name = "blub"
+    encoding = "utf-8"
+    raw_text = r'{}'.format(text)
+    #print(raw_text)
+    pdf, log, completed_process = PDFLaTeX.from_binarystring(
+        raw_text.encode(encoding=encoding), name).create_pdf()
+    #return send_file(base64.b64encode(pdf), mimetype="application/pdf")
+    #print(bytearray(pdf).decode("utf-8"))
+    #return base64.b64encode(pdf)
+
+    # f = open("keks2.pdf", "wb")
+    #print(base64.b64encode(pdf))
+    # f.write(base64.b64encode(pdf))
+    # f.close()
+    return make_response(jsonify({"message":base64.b64encode(pdf).decode("ascii")}), 200)
+    return send_file(pdf, mimetype="application/pdf", as_attachment=True, attachment_filename="blub.pdf") 
+    return make_response(jsonify({"message":str(base64.b64encode(bin(pdf)))}), 200)
 
 if __name__ == '__main__':
     app.run(host="localhost", port=5000, debug=True)
