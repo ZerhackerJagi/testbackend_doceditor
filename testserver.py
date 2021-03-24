@@ -13,7 +13,10 @@ mock_user_data = [
         "username": "1",
         "password_hash": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab36",
         "created_poject_pids": [
-            "6055c6a0b58a129e10222bf7"
+            {
+                "pid": "6055c6a0b58a129e10222bf7",
+                "name": "main"
+            }
         ],
         "collab_poject_pids": [],
         "default_editor": True
@@ -24,8 +27,14 @@ mock_user_data = [
         "username": "2",
         "password_hash":"d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",
         "created_poject_pids": [
-            "6055c6a0b58a129e10222bf9",
-            "6055c6a0b58a129e10222bf8"
+            {
+                "pid": "6055c6a0b58a129e10222bf9",
+                "name": "super nice"
+            },
+            {
+                "pid": "6055c6a0b58a129e10222bf8",
+                "name": "test project 1"
+            }
         ],
         "collab_poject_pids": [],
         "default_editor": True
@@ -37,7 +46,10 @@ mock_project_data = [
         "_id":"6055c6a0b58a129e10222bf7",
         "name":"main",
         "dids":[
-            "6055c6a0b58a129e10222bf8"
+            {
+                "did": "6055c6a0b58a129e10222bf8",
+                "name": "main.tex"
+            }
         ],
         "folders":[],
         "images":[]
@@ -46,7 +58,10 @@ mock_project_data = [
         "_id":"6055c6a0b58a129e10222bf8",
         "name":"test project 1",
         "dids":[
-            "6055c6a0b58a129e10222bf9"
+            {
+                "did": "6055c6a0b58a129e10222bd9",
+                "name": "main.tex"
+            }
         ],
         "folders":[],
         "images":[]
@@ -55,10 +70,32 @@ mock_project_data = [
         "_id":"6055c6a0b58a129e10222bf9",
         "name":"super nice",
         "dids":[
-            "6055c6a0b58a129e10222bg1"
+            {
+                "did": "6055c6a0b58a129e10222bg1",
+                "name": "main.tex"
+            }
         ],
         "folders":[],
         "images":[]
+    }
+]
+
+mock_document_data = [
+    {
+        "did": "6055c6a0b58a129e10222bd9",
+        "name": "main.tex",
+        "text": {
+            "0000-1616234144": 
+            [
+                ["0001-1616266858730", "a"],
+                ["0002-1616266854779", "s"],
+                ["0002-1616266858878", "b"],
+                ["0003-1616266859069", "c"],
+                ["0004-1616266859326", "d"],
+                ["0005-1616266859482", "e"],
+                ["0006-1616266859728", "f"]
+            ] 
+        }
     }
 ]
 
@@ -125,75 +162,74 @@ def get_project_data(pid):
     }
     emit('get_project_response', projektTest)
 
-@app.route('/userdata', methods=['GET'])
+@app.route('/requests/get_user_data', methods=['GET'])
 def get_user_data_REST():
     output = None
 
     try:
-        output = []
-        if 'uid' in request.args:
-            uid = request.args['uid']
-        else:
-            return {
-                "status": 400,
-                "message": "No id field provided. Please specify an id."
-            }
-
-        for user in mock_user_data:
-            if uid == user['uid']:
-                output = user
+        output = mock_user_data[1]
 
         return jsonify({
             'message': 'Successfull',
-            'status': 200,
-            'data': output
+            'value': output
         })
     except Exception as e:
         print(e)
         return({
-            "status": 401,
             "message": "Error"
         })
 
-@app.route('/projects', methods=['GET'])
+@app.route('/requests/get_project', methods=['POST'])
 def get_project_data_REST():
     output = None
 
     try:
-        output = []
-        if 'uid' in request.args:
-            uid = request.args['uid']
-        else:
-            return {
-                "status": 400,
-                "message": "No id field provided. Please specify an id."
-            }
+        pid = request.get_json(force=True).get("pid")
         
-        for mock_user in mock_user_data:
-            if uid == mock_user['uid']:
-                user = mock_user
-
-        for pid in user['created_poject_pids']:
-            for project in mock_project_data:
-                if pid == project['_id']:
-                    output.append(project)
+        for project in mock_project_data:
+            if pid['pid'] == project['_id']:
+                output = project
 
         if output:
             return jsonify({
                 "message": "Successful",
-                "status": 200,
                 "value": output
             })
         else:
             return {
-                "message": "No Project was found",
-                "status": 404
+                "message": "No Project was found"
             }
     except Exception as e:
         print(e)
         return {
-            "message": "Something went wrong!",
-            "status": 400
+            "message": "Something went wrong!"
+        }
+
+@app.route('/requests/get_document', methods=['POST'])
+def get_document_data_REST():
+    output = None
+
+    try:
+        did = request.get_json(force=True).get("did")
+        print(did)
+
+        for document in mock_document_data:
+            if did == document['did']:
+                output = document
+
+        if output:
+            return jsonify({
+                'message': 'Successful',
+                'value': output
+            })
+        else:
+            return {
+                "message": "No Document was found"
+            }
+    except Exception as e:
+        print(e)
+        return {
+            "message": "Something went wrong!"
         }
 
 if __name__ == '__main__':
